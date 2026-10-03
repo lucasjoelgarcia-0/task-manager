@@ -2,6 +2,7 @@ import {router} from "expo-router";
 import {useEffect} from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {closeSession, hasActiveSession} from "../services/authStorage";
+import {Navbar} from "../components/Navbar";
 
 export default function HomeScreen() {
     useEffect(() => {
@@ -22,17 +23,24 @@ export default function HomeScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>¡Bienvenido!</Text>
-            <Text style={styles.description}>Ya podés empezar a organizar tus tareas.</Text>
-            <Pressable onPress={handleLogout} style={styles.button}>
-                <Text style={styles.buttonText}>Cerrar sesión</Text>
-            </Pressable>
+        <View style={styles.screen}>
+            <Navbar onAddPress={() => router.push("/alta")} />
+            <View style={styles.container}>
+                <Text style={styles.title}>¡Bienvenido!</Text>
+                <Text style={styles.description}>Ya podés empezar a organizar tus tareas.</Text>
+                <Pressable onPress={handleLogout} style={styles.button}>
+                    <Text style={styles.buttonText}>Cerrar sesión</Text>
+                </Pressable>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        backgroundColor: "#eef4fb",
+        flex: 1
+    },
     container: {
         alignItems: "center",
         backgroundColor: "#eef4fb",

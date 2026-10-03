@@ -3,6 +3,7 @@ import { Task } from "../../types/task";
 
 const pendingTask: Task = {
   id: 1,
+  title: "Tareas del hogar",
   todo: "Ordenar la casa",
   isDone: false,
   withNotification: false,

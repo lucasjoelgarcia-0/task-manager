@@ -29,7 +29,14 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
               size={22}
             />
           </Pressable>
-          <Text style={[styles.taskText, task.isDone && styles.completedTaskText]}>{task.todo}</Text>
+          <View style={styles.taskContent}>
+            <Text style={[styles.taskTitle, task.isDone && styles.completedTaskText]}>
+              {task.title}
+            </Text>
+            <Text style={[styles.taskText, task.isDone && styles.completedTaskText]}>
+              {task.todo}
+            </Text>
+          </View>
           <Pressable onPress={() => {}} style={styles.actionButton}>
             <Ionicons color="#208AEF" name="notifications-outline" size={22} />
           </Pressable>
@@ -65,8 +72,16 @@ const styles = StyleSheet.create({
   },
   taskText: {
     color: "#17202a",
-    flex: 1,
     fontSize: 16,
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskTitle: {
+    color: "#17202a",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
   },
   completedTaskText: {
     textDecorationLine: "line-through",

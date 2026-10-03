@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
 import { TaskList } from "../components/TaskList";
 import { Task } from "../types/task";
@@ -19,12 +19,18 @@ function getRandomTaskExample(): string {
 }
 
 export default function AltaScreen() {
+  const [title, setTitle] = useState("");
   const [todo, setTodo] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskExample] = useState(getRandomTaskExample);
 
   async function handleSave() {
+    if (!title.trim()) {
+      setErrorMessage("Completá el título y la tarea.");
+      return;
+    }
+
     if (!todo.trim()) {
       setErrorMessage("Escribí una tarea.");
       return;
@@ -32,6 +38,7 @@ export default function AltaScreen() {
 
     const newTask = await saveTask({
       id: 0,
+      title: title.trim(),
       todo: todo.trim(),
       isDone: false,
       withNotification: false,
@@ -39,6 +46,7 @@ export default function AltaScreen() {
     });
 
     setTasks([...tasks, newTask]);
+    setTitle("");
     setTodo("");
     setErrorMessage("");
   }
@@ -59,19 +67,25 @@ export default function AltaScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Crear tareas</Text>
+      <Text style={styles.label}>Título</Text>
+      <TextInput
+        onChangeText={setTitle}
+        placeholder="Título de la tarea"
+        placeholderTextColor="#8a8f98"
+        style={styles.titleInput}
+        value={title}
+      />
       <Text style={styles.label}>Creá una nueva tarea, por ejemplo:</Text>
-      <View style={styles.inputRow}>
-        <TextInput
-          onChangeText={setTodo}
-          placeholder={taskExample}
-          placeholderTextColor="#8a8f98"
-          style={styles.input}
-          value={todo}
-        />
-        <Pressable onPress={handleSave} style={styles.addButton}>
-          <Text style={styles.addText}>+</Text>
-        </Pressable>
-      </View>
+      <TextInput
+        onChangeText={setTodo}
+        placeholder={taskExample}
+        placeholderTextColor="#8a8f98"
+        style={styles.input}
+        value={todo}
+      />
+      <Pressable onPress={handleSave} style={styles.addButton}>
+        <Text style={styles.addText}>Crear</Text>
+      </Pressable>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
       <TaskList
@@ -115,11 +129,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
   },
-  inputRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
+  titleInput: {
+    backgroundColor: "#ffffff",
+    borderColor: "#d9dee5",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: "#17202a",
+    fontSize: 16,
     marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
   },
   input: {
     backgroundColor: "#ffffff",
@@ -127,8 +146,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     color: "#17202a",
-    flex: 1,
     fontSize: 16,
+    marginTop: 10,
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
@@ -138,14 +157,15 @@ const styles = StyleSheet.create({
     borderColor: "#166fbe",
     borderRadius: 12,
     borderWidth: 1,
-    height: 50,
     justifyContent: "center",
-    width: 50,
+    marginTop: 10,
+    paddingVertical: 13,
+    width: "100%",
   },
   addText: {
     color: "#ffffff",
-    fontSize: 30,
-    lineHeight: 32,
+    fontSize: 16,
+    fontWeight: "700",
   },
   error: {
     color: "#c0392b",

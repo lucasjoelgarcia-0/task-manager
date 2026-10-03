@@ -40,13 +40,13 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.screen}>
-            <Navbar onAddPress={() => router.push("/alta")} />
+            <Navbar onLogoutPress={handleLogout} />
             <View style={styles.container}>
                 <Text style={styles.title}>¡Bienvenido!</Text>
                 <Text style={styles.description}>Ya podés empezar a organizar tus tareas.</Text>
                 <TaskList onDelete={handleDelete} tasks={tasks} />
-                <Pressable onPress={handleLogout} style={styles.button}>
-                    <Text style={styles.buttonText}>Cerrar sesión</Text>
+                <Pressable onPress={() => router.push("/alta")} style={styles.button}>
+                    <Text style={styles.buttonText}>Agregar tareas</Text>
                 </Pressable>
             </View>
         </View>

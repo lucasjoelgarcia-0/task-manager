@@ -1,14 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type NavbarProps = {
-  onAddPress: () => void;
+  onLogoutPress: () => void;
 };
 
-export function Navbar({ onAddPress }: NavbarProps) {
+export function Navbar({ onLogoutPress }: NavbarProps) {
   return (
     <View style={styles.container}>
-      <Pressable onPress={onAddPress} style={styles.addButton}>
-        <Text style={styles.addText}>+</Text>
+      <Pressable onPress={onLogoutPress} style={styles.logoutButton}>
+        <Ionicons color="#c0392b" name="log-out-outline" size={25} />
       </Pressable>
       <Text style={styles.title}>ISTEA Task Manager</Text>
     </View>
@@ -29,14 +30,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginLeft: 16,
   },
-  addButton: {
+  logoutButton: {
     alignItems: "center",
     justifyContent: "center",
     padding: 4,
-  },
-  addText: {
-    color: "#000000",
-    fontSize: 30,
-    lineHeight: 32,
   },
 });

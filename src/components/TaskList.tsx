@@ -1,5 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useLocalNotifications } from "../hooks/useLocalNotifications";
+import { updateTask } from "../services/taskStorage";
 import { Task } from "../types/task";
 
 type TaskListProps = {
@@ -9,6 +12,23 @@ type TaskListProps = {
 };
 
 export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const { scheduleNotification } = useLocalNotifications();
+
+  async function handleNotification(seconds: number) {
+    if (!selectedTask) {
+      return;
+    }
+
+    const notificationId = await scheduleNotification(selectedTask.todo, seconds);
+
+    if (notificationId) {
+      await updateTask({ ...selectedTask, notificationId });
+    }
+
+    setSelectedTask(null);
+  }
+
   return (
     <View style={styles.container}>
       {tasks.map((task) => (
@@ -37,7 +57,7 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
               {task.todo}
             </Text>
           </View>
-          <Pressable onPress={() => {}} style={styles.actionButton}>
+          <Pressable onPress={() => setSelectedTask(task)} style={styles.actionButton}>
             <Ionicons color="#208AEF" name="notifications-outline" size={22} />
           </Pressable>
           <Pressable
@@ -52,6 +72,25 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
           </Pressable>
         </View>
       ))}
+      <Modal animationType="slide" transparent visible={selectedTask !== null}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Programar notificación</Text>
+            <Pressable onPress={() => handleNotification(3)} style={styles.modalOption}>
+              <Text style={styles.modalOptionText}>Mostrar en 3 segundos</Text>
+            </Pressable>
+            <Pressable onPress={() => handleNotification(30)} style={styles.modalOption}>
+              <Text style={styles.modalOptionText}>Mostrar en 30 segundos</Text>
+            </Pressable>
+            <Pressable onPress={() => handleNotification(60)} style={styles.modalOption}>
+              <Text style={styles.modalOptionText}>Mostrar en 1 minuto</Text>
+            </Pressable>
+            <Pressable onPress={() => setSelectedTask(null)} style={styles.cancelButton}>
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -93,5 +132,44 @@ const styles = StyleSheet.create({
   actionButton: {
     marginLeft: 8,
     padding: 4,
+  },
+  modalOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
+    width: "100%",
+  },
+  modalTitle: {
+    color: "#17202a",
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  modalOption: {
+    borderColor: "#d9dee5",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+    padding: 13,
+  },
+  modalOptionText: {
+    color: "#17202a",
+    fontSize: 16,
+  },
+  cancelButton: {
+    alignItems: "center",
+    marginTop: 12,
+    padding: 10,
+  },
+  cancelText: {
+    color: "#c0392b",
+    fontWeight: "700",
   },
 });

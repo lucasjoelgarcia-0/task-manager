@@ -2,6 +2,17 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { TaskList } from "../TaskList";
 import { Task } from "../../types/task";
 
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+}));
+
+jest.mock("../../hooks/useLocalNotifications", () => ({
+  useLocalNotifications: () => ({
+    scheduleNotification: jest.fn(),
+  }),
+}));
+
 const pendingTask: Task = {
   id: 1,
   title: "Tareas del hogar",

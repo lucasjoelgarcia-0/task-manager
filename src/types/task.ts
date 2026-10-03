@@ -5,4 +5,5 @@ export type Task = {
   isDone: boolean;
   withNotification: boolean;
   notificationDate: Date;
+  notificationId?: string | null;
 };

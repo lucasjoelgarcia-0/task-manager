@@ -49,3 +49,16 @@ export async function toggleTask(taskId: number): Promise<Task | undefined> {
   await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
   return task;
 }
+
+export async function updateTask(task: Task): Promise<void> {
+  const tasks = await getTasks();
+  const updatedTasks = tasks.map((storedTask) => {
+    if (storedTask.id === task.id) {
+      return task;
+    }
+
+    return storedTask;
+  });
+
+  await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
+}

@@ -1,0 +1,45 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export type Task = {
+  id?: number;
+  todo: string;
+  isDone: boolean;
+  withNotification: boolean;
+  notificationDate: Date;
+};
+
+const TASKS_KEY = "tasks";
+
+export async function getTasks(): Promise<Task[]> {
+  const storedTasks = await AsyncStorage.getItem(TASKS_KEY);
+
+  if (!storedTasks) {
+    return [];
+  }
+
+  const tasks = JSON.parse(storedTasks) as Task[];
+
+  return tasks.map((task) => ({
+    ...task,
+    notificationDate: new Date(task.notificationDate),
+  }));
+}
+
+export async function saveTask(task: Task): Promise<Task> {
+  const tasks = await getTasks();
+  const newId = tasks.length + 1;
+  const newTask: Task = {
+    ...task,
+    id: newId,
+  };
+
+  await AsyncStorage.setItem(TASKS_KEY, JSON.stringify([...tasks, newTask]));
+  return newTask;
+}
+
+export async function deleteTask(taskId: number): Promise<void> {
+  const tasks = await getTasks();
+  const tasksFiltered = tasks.filter((task) => task.id !== taskId);
+
+  await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(tasksFiltered));
+}

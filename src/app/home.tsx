@@ -1,10 +1,14 @@
 import {router} from "expo-router";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {closeSession, hasActiveSession} from "../services/authStorage";
 import {Navbar} from "../components/Navbar";
+import {TaskList} from "../components/TaskList";
+import {deleteTask, getTasks, Task} from "../services/taskStorage";
 
 export default function HomeScreen() {
+    const [tasks, setTasks] = useState<Task[]>([]);
+
     useEffect(() => {
         async function checkSession() {
             const sessionIsActive = await hasActiveSession();
@@ -15,7 +19,19 @@ export default function HomeScreen() {
         }
 
         checkSession();
+
+        async function loadTasks() {
+            const storedTasks = await getTasks();
+            setTasks(storedTasks);
+        }
+
+        loadTasks();
     }, []);
+
+    async function handleDelete(taskId: number) {
+        await deleteTask(taskId);
+        setTasks(tasks.filter((task) => task.id !== taskId));
+    }
 
     async function handleLogout() {
         await closeSession();
@@ -28,6 +44,7 @@ export default function HomeScreen() {
             <View style={styles.container}>
                 <Text style={styles.title}>¡Bienvenido!</Text>
                 <Text style={styles.description}>Ya podés empezar a organizar tus tareas.</Text>
+                <TaskList onDelete={handleDelete} tasks={tasks} />
                 <Pressable onPress={handleLogout} style={styles.button}>
                     <Text style={styles.buttonText}>Cerrar sesión</Text>
                 </Pressable>

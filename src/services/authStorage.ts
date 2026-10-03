@@ -1,9 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-export type StoredUser = {
-  email: string;
-  password: string;
-};
+import { StoredUser } from "../types/auth";
 
 const USERS_KEY = "istea_task_manager_users";
 const SESSION_KEY = "istea_task_manager_session";

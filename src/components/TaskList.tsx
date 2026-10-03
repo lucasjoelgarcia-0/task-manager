@@ -1,18 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Task } from "../services/taskStorage";
+import { Task } from "../types/task";
 
 type TaskListProps = {
   tasks: Task[];
   onDelete: (taskId: number) => void;
+  onToggle: (taskId: number) => void;
 };
 
-export function TaskList({ tasks, onDelete }: TaskListProps) {
+export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
   return (
     <View style={styles.container}>
       {tasks.map((task) => (
         <View key={task.id} style={styles.taskRow}>
-          <Text style={styles.taskText}>{task.todo}</Text>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: task.isDone }}
+            onPress={() => {
+              if (task.id !== undefined) {
+                onToggle(task.id);
+              }
+            }}
+            style={styles.checkbox}
+          >
+            <Ionicons
+              color="#208AEF"
+              name={task.isDone ? "checkbox" : "square-outline"}
+              size={22}
+            />
+          </Pressable>
+          <Text style={[styles.taskText, task.isDone && styles.completedTaskText]}>{task.todo}</Text>
           <Pressable onPress={() => {}} style={styles.actionButton}>
             <Ionicons color="#208AEF" name="notifications-outline" size={22} />
           </Pressable>
@@ -50,6 +67,13 @@ const styles = StyleSheet.create({
     color: "#17202a",
     flex: 1,
     fontSize: 16,
+  },
+  completedTaskText: {
+    textDecorationLine: "line-through",
+  },
+  checkbox: {
+    marginRight: 8,
+    padding: 2,
   },
   actionButton: {
     marginLeft: 8,

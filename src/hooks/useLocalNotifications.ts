@@ -24,7 +24,6 @@ export function useLocalNotifications() {
         name: "Recordatorios",
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        sound: "default",
       });
     }
 
@@ -54,7 +53,6 @@ export function useLocalNotifications() {
         data: {
           tipo: "recordatorio",
         },
-        sound: "default",
         title: "Recordatorio de tarea",
       },
       trigger: {

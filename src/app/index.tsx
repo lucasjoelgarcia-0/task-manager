@@ -1,5 +1,11 @@
-import { Redirect } from "expo-router";
+import { router } from "expo-router";
+import { useEffect } from "react";
+import { View } from "react-native";
 
 export default function Index() {
-  return <Redirect href="/register" />;
+  useEffect(() => {
+    router.replace("/register");
+  }, []);
+
+  return <View />;
 }

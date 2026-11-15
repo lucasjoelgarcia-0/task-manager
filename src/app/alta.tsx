@@ -1,14 +1,13 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { DeviceServices } from "../components/DeviceServices";
 import { TaskInfoCard } from "../components/TaskInfoCard";
 import { TaskList } from "../components/TaskList";
-import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
 import type { ContactDetails } from "../types/contact";
 import type { LocationDetails } from "../services/device-apis/location/location";
-import { Task } from "../types/task";
+import { useTaskStore } from "../stores/taskStore";
 import { hasCompletedTasks } from "../utils/taskUtils";
 
 const taskExamples = [
@@ -32,8 +31,17 @@ export default function AltaScreen() {
   const [locationError, setLocationError] = useState("");
   const [responsibleContact, setResponsibleContact] = useState<ContactDetails | null>(null);
   const [completionDate, setCompletionDate] = useState<Date | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [taskExample] = useState(getRandomTaskExample);
+  const tasks = useTaskStore((state) => state.tasks);
+  const loadTasks = useTaskStore((state) => state.loadTasks);
+  const addTask = useTaskStore((state) => state.addTask);
+  const deleteTask = useTaskStore((state) => state.deleteTask);
+  const toggleTask = useTaskStore((state) => state.toggleTask);
+  const taskError = useTaskStore((state) => state.error);
+
+  useEffect(() => {
+    loadTasks().catch(() => undefined);
+  }, [loadTasks]);
 
   async function handleSave() {
     if (!title.trim()) {
@@ -46,19 +54,22 @@ export default function AltaScreen() {
       return;
     }
 
-    const newTask = await saveTask({
-      id: 0,
-      title: title.trim(),
-      todo: todo.trim(),
-      completionDate,
-      imageUri,
-      responsibleContact,
-      isDone: false,
-      withNotification: false,
-      notificationDate: new Date(),
-    });
+    try {
+      await addTask({
+        id: 0,
+        title: title.trim(),
+        todo: todo.trim(),
+        completionDate,
+        imageUri,
+        responsibleContact,
+        isDone: false,
+        withNotification: false,
+        notificationDate: new Date(),
+      });
+    } catch {
+      return;
+    }
 
-    setTasks([...tasks, newTask]);
     setTitle("");
     setTodo("");
     setImageUri(null);
@@ -68,15 +79,18 @@ export default function AltaScreen() {
   }
 
   async function handleDelete(taskId: number) {
-    await deleteTask(taskId);
-    setTasks(tasks.filter((task) => task.id !== taskId));
+    try {
+      await deleteTask(taskId);
+    } catch {
+      // The store exposes the error to the screen.
+    }
   }
 
   async function handleToggle(taskId: number) {
-    const updatedTask = await toggleTask(taskId);
-
-    if (updatedTask) {
-      setTasks(tasks.map((task) => task.id === taskId ? updatedTask : task));
+    try {
+      await toggleTask(taskId);
+    } catch {
+      // The store exposes the error to the screen.
     }
   }
 
@@ -136,6 +150,7 @@ export default function AltaScreen() {
         <Text style={styles.addText}>Crear</Text>
       </Pressable>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+      {taskError ? <Text style={styles.error}>{taskError}</Text> : null}
 
       <TaskList
         onDelete={handleDelete}

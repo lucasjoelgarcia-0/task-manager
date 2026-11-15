@@ -1,15 +1,18 @@
 import {router} from "expo-router";
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {closeSession, hasActiveSession} from "../services/authStorage";
 import {Navbar} from "../components/Navbar";
 import {TaskList} from "../components/TaskList";
-import {deleteTask, getTasks, toggleTask} from "../services/taskStorage";
-import {Task} from "../types/task";
+import {useTaskStore} from "../stores/taskStore";
 import {hasCompletedTasks} from "../utils/taskUtils";
 
 export default function HomeScreen() {
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const tasks = useTaskStore((state) => state.tasks);
+    const loadTasks = useTaskStore((state) => state.loadTasks);
+    const deleteTask = useTaskStore((state) => state.deleteTask);
+    const toggleTask = useTaskStore((state) => state.toggleTask);
+    const taskError = useTaskStore((state) => state.error);
 
     useEffect(() => {
         async function checkSession() {
@@ -22,24 +25,22 @@ export default function HomeScreen() {
 
         checkSession();
 
-        async function loadTasks() {
-            const storedTasks = await getTasks();
-            setTasks(storedTasks);
-        }
-
-        loadTasks();
-    }, []);
+        loadTasks().catch(() => undefined);
+    }, [loadTasks]);
 
     async function handleDelete(taskId: number) {
-        await deleteTask(taskId);
-        setTasks(tasks.filter((task) => task.id !== taskId));
+        try {
+            await deleteTask(taskId);
+        } catch {
+            // The store exposes the error to the screen.
+        }
     }
 
     async function handleToggle(taskId: number) {
-        const updatedTask = await toggleTask(taskId);
-
-        if (updatedTask) {
-            setTasks(tasks.map((task) => task.id === taskId ? updatedTask : task));
+        try {
+            await toggleTask(taskId);
+        } catch {
+            // The store exposes the error to the screen.
         }
     }
 
@@ -78,6 +79,7 @@ export default function HomeScreen() {
                         />
                     </>
                 ) : null}
+                {taskError ? <Text style={styles.error}>{taskError}</Text> : null}
                 <Pressable onPress={() => router.push("/alta")} style={styles.button}>
                     <Text style={styles.buttonText}>Agregar tareas</Text>
                 </Pressable>
@@ -107,6 +109,11 @@ const styles = StyleSheet.create({
         color: "#687282",
         fontSize: 16,
         marginTop: 8
+    },
+    error: {
+        color: "#c0392b",
+        fontSize: 14,
+        marginTop: 16
     },
     completedTitle: {
         color: "#17202a",

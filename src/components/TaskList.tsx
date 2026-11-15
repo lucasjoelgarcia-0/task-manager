@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { ImageThumbnail } from "./ImageThumbnail";
 import { useLocalNotifications } from "../hooks/useLocalNotifications";
-import { updateTask } from "../services/taskStorage";
+import { useTaskStore } from "../stores/taskStore";
 import { Task } from "../types/task";
 
 type TaskListProps = {
@@ -15,16 +15,21 @@ type TaskListProps = {
 export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { scheduleNotification } = useLocalNotifications();
+  const updateTask = useTaskStore((state) => state.updateTask);
 
   async function handleNotification(seconds: number) {
     if (!selectedTask) {
       return;
     }
 
-    const notificationId = await scheduleNotification(selectedTask.todo, seconds);
+    try {
+      const notificationId = await scheduleNotification(selectedTask.todo, seconds);
 
-    if (notificationId) {
-      await updateTask({ ...selectedTask, notificationId });
+      if (notificationId) {
+        await updateTask({ ...selectedTask, notificationId });
+      }
+    } catch {
+      // The task store exposes persistence errors to the screen.
     }
 
     setSelectedTask(null);

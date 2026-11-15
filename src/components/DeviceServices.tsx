@@ -21,14 +21,18 @@ import {
   selectImageFromGallery,
 } from "../services/device-apis/images/gallery";
 import {
+  getCurrentLocationDetails,
   isLocationPermissionGranted,
   requestLocationPermission,
+  type LocationDetails,
 } from "../services/device-apis/location/location";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 type DeviceServicesProps = {
   onImageSelected: (imageUri: string) => void;
+  onLocationDetected: (location: LocationDetails) => void;
+  onLocationError: (message: string) => void;
 };
 
 type PermissionState = {
@@ -61,6 +65,9 @@ const initialPermissionState: PermissionState = {
   gallery: false,
   location: false,
 };
+
+const locationErrorMessage =
+  "No se pudo detectar la ubicación. Verificá que el servicio de ubicación esté activo y que el dispositivo tenga una ubicación disponible.";
 
 const permissionLabels: Record<PermissionKey, string> = {
   calendar: "calendario",
@@ -108,7 +115,11 @@ async function checkDevicePermissions(): Promise<PermissionState> {
   };
 }
 
-export function DeviceServices({ onImageSelected }: DeviceServicesProps) {
+export function DeviceServices({
+  onImageSelected,
+  onLocationDetected,
+  onLocationError,
+}: DeviceServicesProps) {
   const [hasCheckedDevicePermissions, setHasCheckedDevicePermissions] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissionState);
   const [isImageOptionsVisible, setIsImageOptionsVisible] = useState(false);
@@ -191,8 +202,28 @@ export function DeviceServices({ onImageSelected }: DeviceServicesProps) {
   }
 
   async function handleServicePermission(permissionKey: NonImagePermissionKey) {
-    await permissionRequests[permissionKey]();
-    await refreshDevicePermissions();
+    try {
+      const permissionGranted = await permissionRequests[permissionKey]();
+      await refreshDevicePermissions();
+
+      if (permissionKey === "location") {
+        if (!permissionGranted) {
+          return;
+        }
+
+        const location = await getCurrentLocationDetails();
+
+        if (location) {
+          onLocationDetected(location);
+        } else {
+          onLocationError(locationErrorMessage);
+        }
+      }
+    } catch {
+      if (permissionKey === "location") {
+        onLocationError(locationErrorMessage);
+      }
+    }
   }
 
   const deniedPermissions = (Object.keys(permissionLabels) as PermissionKey[])

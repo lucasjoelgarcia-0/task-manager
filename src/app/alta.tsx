@@ -1,10 +1,11 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { DeviceServices } from "../components/DeviceServices";
 import { TaskList } from "../components/TaskList";
 import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
+import type { LocationDetails } from "../services/device-apis/location/location";
 import { Task } from "../types/task";
 import { hasCompletedTasks } from "../utils/taskUtils";
 
@@ -25,6 +26,8 @@ export default function AltaScreen() {
   const [todo, setTodo] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [location, setLocation] = useState<LocationDetails | null>(null);
+  const [locationError, setLocationError] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskExample] = useState(getRandomTaskExample);
 
@@ -89,7 +92,23 @@ export default function AltaScreen() {
         value={todo}
       />
       <ImageThumbnail uri={imageUri} />
-      <DeviceServices onImageSelected={setImageUri} />
+      {location ? (
+        <View style={styles.locationCard}>
+          <Text style={styles.locationTitle}>Ubicación actual</Text>
+          <Text style={styles.locationText}>
+            {[location.country, location.province].filter(Boolean).join(", ")}
+          </Text>
+        </View>
+      ) : null}
+      {locationError ? <Text style={styles.locationError}>{locationError}</Text> : null}
+      <DeviceServices
+        onImageSelected={setImageUri}
+        onLocationDetected={(detectedLocation) => {
+          setLocation(detectedLocation);
+          setLocationError("");
+        }}
+        onLocationError={setLocationError}
+      />
       <Pressable onPress={handleSave} style={styles.addButton}>
         <Text style={styles.addText}>Crear</Text>
       </Pressable>
@@ -178,6 +197,29 @@ const styles = StyleSheet.create({
     color: "#c0392b",
     fontSize: 14,
     marginTop: 16,
+  },
+  locationCard: {
+    backgroundColor: "#ffffff",
+    borderColor: "#d9dee5",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 12,
+    padding: 12,
+  },
+  locationText: {
+    color: "#17202a",
+    fontSize: 15,
+    marginTop: 4,
+  },
+  locationError: {
+    color: "#c0392b",
+    fontSize: 13,
+    marginTop: 8,
+  },
+  locationTitle: {
+    color: "#273142",
+    fontSize: 14,
+    fontWeight: "700",
   },
   completedTitle: {
     color: "#17202a",

@@ -17,6 +17,12 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": [
+        "READ_CONTACTS",
+        "WRITE_CONTACTS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ],
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.isteataskmanagerapp"
     },
@@ -27,6 +33,18 @@
     "plugins": [
       "expo-router",
       "expo-notifications",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "La aplicación necesita acceder a tus contactos."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "La aplicación necesita acceder a tu calendario."
+        }
+      ],
       [
         "expo-splash-screen",
         {

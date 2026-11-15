@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import type { ComponentProps } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   isCalendarPermissionGranted,
   requestCalendarPermission,
@@ -70,6 +70,14 @@ const permissionRequests: Record<NonImagePermissionKey, () => Promise<boolean>> 
   location: requestLocationPermission,
 };
 
+async function checkPermission(check: () => Promise<boolean>): Promise<boolean> {
+  try {
+    return await check();
+  } catch {
+    return false;
+  }
+}
+
 async function checkDevicePermissions(): Promise<PermissionState> {
   const [
     hasCameraPermission,
@@ -78,11 +86,11 @@ async function checkDevicePermissions(): Promise<PermissionState> {
     hasContactsPermission,
     hasCalendarPermission,
   ] = await Promise.all([
-    isCameraPermissionGranted(),
-    isGalleryPermissionGranted(),
-    isLocationPermissionGranted(),
-    isContactsPermissionGranted(),
-    isCalendarPermissionGranted(),
+    checkPermission(isCameraPermissionGranted),
+    checkPermission(isGalleryPermissionGranted),
+    checkPermission(isLocationPermissionGranted),
+    checkPermission(isContactsPermissionGranted),
+    checkPermission(isCalendarPermissionGranted),
   ]);
 
   return {
@@ -112,25 +120,35 @@ export function DeviceServices() {
   useEffect(() => {
     let isMounted = true;
 
-    void checkDevicePermissions()
-      .then((nextPermissions) => {
-        if (isMounted) {
-          setPermissions(nextPermissions);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setPermissions(initialPermissionState);
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setHasCheckedDevicePermissions(true);
-        }
-      });
+    function checkPermissions() {
+      checkDevicePermissions()
+        .then((nextPermissions) => {
+          if (isMounted) {
+            setPermissions(nextPermissions);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setPermissions(initialPermissionState);
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setHasCheckedDevicePermissions(true);
+          }
+        });
+    }
+
+    checkPermissions();
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        checkPermissions();
+      }
+    });
 
     return () => {
       isMounted = false;
+      subscription.remove();
     };
   }, []);
 
@@ -197,7 +215,7 @@ export function DeviceServices() {
               accessibilityLabel={`Solicitar ${service.label.toLowerCase()}`}
               accessibilityRole="button"
               key={service.label}
-              onPress={() => void handleServicePermission(service.permissionKey)}
+              onPress={() => handleServicePermission(service.permissionKey)}
               style={({ pressed }) => [
                 styles.serviceButton,
                 !hasPermission && styles.serviceButtonError,

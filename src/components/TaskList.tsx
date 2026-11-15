@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ImageThumbnail } from "./ImageThumbnail";
 import { useLocalNotifications } from "../hooks/useLocalNotifications";
 import { updateTask } from "../services/taskStorage";
 import { Task } from "../types/task";
@@ -50,6 +51,7 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
             />
           </Pressable>
           <View style={styles.taskContent}>
+            <ImageThumbnail size={56} uri={task.imageUri} />
             <Text style={[styles.taskTitle, task.isDone && styles.completedTaskText]}>
               {task.title}
             </Text>

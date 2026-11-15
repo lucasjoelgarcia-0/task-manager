@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
+import { ImageThumbnail } from "../components/ImageThumbnail";
 import { DeviceServices } from "../components/DeviceServices";
 import { TaskList } from "../components/TaskList";
 import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
@@ -23,6 +24,7 @@ export default function AltaScreen() {
   const [title, setTitle] = useState("");
   const [todo, setTodo] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskExample] = useState(getRandomTaskExample);
 
@@ -41,6 +43,7 @@ export default function AltaScreen() {
       id: 0,
       title: title.trim(),
       todo: todo.trim(),
+      imageUri,
       isDone: false,
       withNotification: false,
       notificationDate: new Date(),
@@ -49,6 +52,7 @@ export default function AltaScreen() {
     setTasks([...tasks, newTask]);
     setTitle("");
     setTodo("");
+    setImageUri(null);
     setErrorMessage("");
   }
 
@@ -84,7 +88,8 @@ export default function AltaScreen() {
         style={styles.input}
         value={todo}
       />
-      <DeviceServices />
+      <ImageThumbnail uri={imageUri} />
+      <DeviceServices onImageSelected={setImageUri} />
       <Pressable onPress={handleSave} style={styles.addButton}>
         <Text style={styles.addText}>Crear</Text>
       </Pressable>

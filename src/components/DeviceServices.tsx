@@ -13,10 +13,12 @@ import {
 import {
   isCameraPermissionGranted,
   requestCameraPermission,
+  takePhoto,
 } from "../services/device-apis/images/camera";
 import {
   isGalleryPermissionGranted,
   requestGalleryPermission,
+  selectImageFromGallery,
 } from "../services/device-apis/images/gallery";
 import {
   isLocationPermissionGranted,
@@ -24,6 +26,10 @@ import {
 } from "../services/device-apis/location/location";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+type DeviceServicesProps = {
+  onImageSelected: (imageUri: string) => void;
+};
 
 type PermissionState = {
   calendar: boolean;
@@ -102,7 +108,7 @@ async function checkDevicePermissions(): Promise<PermissionState> {
   };
 }
 
-export function DeviceServices() {
+export function DeviceServices({ onImageSelected }: DeviceServicesProps) {
   const [hasCheckedDevicePermissions, setHasCheckedDevicePermissions] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissionState);
   const [isImageOptionsVisible, setIsImageOptionsVisible] = useState(false);
@@ -158,14 +164,30 @@ export function DeviceServices() {
 
   async function handleCameraPermission() {
     closeImageOptions();
-    await requestCameraPermission();
+    const permissionGranted = await requestCameraPermission();
     await refreshDevicePermissions();
+
+    if (permissionGranted) {
+      const imageUri = await takePhoto();
+
+      if (imageUri) {
+        onImageSelected(imageUri);
+      }
+    }
   }
 
   async function handleGalleryPermission() {
     closeImageOptions();
-    await requestGalleryPermission();
+    const permissionGranted = await requestGalleryPermission();
     await refreshDevicePermissions();
+
+    if (permissionGranted) {
+      const imageUri = await selectImageFromGallery();
+
+      if (imageUri) {
+        onImageSelected(imageUri);
+      }
+    }
   }
 
   async function handleServicePermission(permissionKey: NonImagePermissionKey) {

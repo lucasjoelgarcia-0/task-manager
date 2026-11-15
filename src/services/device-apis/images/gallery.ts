@@ -11,3 +11,15 @@ export async function requestGalleryPermission(): Promise<boolean> {
 
   return permission.granted;
 }
+
+export async function selectImageFromGallery(): Promise<string | null> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ["images"],
+  });
+
+  if (result.canceled) {
+    return null;
+  }
+
+  return result.assets[0]?.uri ?? null;
+}

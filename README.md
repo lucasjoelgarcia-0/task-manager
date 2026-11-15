@@ -35,6 +35,14 @@ Se requiere Node.js 20 o superior.
 > NOTA: 
 > Primero se debe tener un emulador con Android corriendo. La compilación puede demorar unos minutos. 
 
+> Si Gradle informa que no encuentra el Android SDK, crear el archivo `android/local.properties` con la ruta local del SDK:
+>
+> ```properties
+> sdk.dir=C:/Users/<usuario>/AppData/Local/Android/Sdk
+> ```
+>
+> Reemplazar `<usuario>` por el usuario de Windows correspondiente y volver a ejecutar `npx expo run:android`.
+
 ## 3. Pruebas unitarias
 ```bash
 npm test

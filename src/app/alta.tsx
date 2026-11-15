@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { DeviceServices } from "../components/DeviceServices";
+import { TaskInfoCard } from "../components/TaskInfoCard";
 import { TaskList } from "../components/TaskList";
 import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
 import type { ContactDetails } from "../types/contact";
@@ -30,6 +31,7 @@ export default function AltaScreen() {
   const [location, setLocation] = useState<LocationDetails | null>(null);
   const [locationError, setLocationError] = useState("");
   const [responsibleContact, setResponsibleContact] = useState<ContactDetails | null>(null);
+  const [completionDate, setCompletionDate] = useState<Date | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskExample] = useState(getRandomTaskExample);
 
@@ -48,6 +50,7 @@ export default function AltaScreen() {
       id: 0,
       title: title.trim(),
       todo: todo.trim(),
+      completionDate,
       imageUri,
       responsibleContact,
       isDone: false,
@@ -60,6 +63,7 @@ export default function AltaScreen() {
     setTodo("");
     setImageUri(null);
     setResponsibleContact(null);
+    setCompletionDate(null);
     setErrorMessage("");
   }
 
@@ -97,24 +101,24 @@ export default function AltaScreen() {
       />
       <ImageThumbnail uri={imageUri} />
       {location ? (
-        <View style={styles.locationCard}>
-          <Text style={styles.locationTitle}>Ubicación actual</Text>
-          <Text style={styles.locationText}>
-            {[location.country, location.province].filter(Boolean).join(", ")}
-          </Text>
-        </View>
+        <TaskInfoCard
+          title="Ubicación actual"
+          value={[location.country, location.province].filter(Boolean).join(", ")}
+        />
       ) : null}
       {locationError ? <Text style={styles.locationError}>{locationError}</Text> : null}
       {responsibleContact ? (
-        <View style={styles.contactCard}>
-          <Text style={styles.contactTitle}>Responsable de la tarea</Text>
-          <Text style={styles.contactName}>
-            {[responsibleContact.firstName, responsibleContact.lastName].filter(Boolean).join(" ")}
-          </Text>
-          {responsibleContact.email ? (
-            <Text style={styles.contactEmail}>{responsibleContact.email}</Text>
-          ) : null}
-        </View>
+        <TaskInfoCard
+          secondaryValue={responsibleContact.email || undefined}
+          title="Responsable de la tarea"
+          value={[responsibleContact.firstName, responsibleContact.lastName].filter(Boolean).join(" ")}
+        />
+      ) : null}
+      {completionDate ? (
+        <TaskInfoCard
+          title="Fecha de finalización"
+          value={completionDate.toLocaleDateString("es-AR")}
+        />
       ) : null}
       <DeviceServices
         onContactSelected={setResponsibleContact}
@@ -124,6 +128,9 @@ export default function AltaScreen() {
           setLocationError("");
         }}
         onLocationError={setLocationError}
+        onCalendarDateSelected={setCompletionDate}
+        taskDescription={todo}
+        taskTitle={title}
       />
       <Pressable onPress={handleSave} style={styles.addButton}>
         <Text style={styles.addText}>Crear</Text>
@@ -214,52 +221,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 16,
   },
-  locationCard: {
-    backgroundColor: "#ffffff",
-    borderColor: "#d9dee5",
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 12,
-    padding: 12,
-  },
-  locationText: {
-    color: "#17202a",
-    fontSize: 15,
-    marginTop: 4,
-  },
   locationError: {
     color: "#c0392b",
     fontSize: 13,
     marginTop: 8,
-  },
-  contactCard: {
-    backgroundColor: "#ffffff",
-    borderColor: "#d9dee5",
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 12,
-    padding: 12,
-  },
-  contactEmail: {
-    color: "#566171",
-    fontSize: 14,
-    marginTop: 4,
-  },
-  contactName: {
-    color: "#17202a",
-    fontSize: 15,
-    fontWeight: "600",
-    marginTop: 4,
-  },
-  contactTitle: {
-    color: "#273142",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  locationTitle: {
-    color: "#273142",
-    fontSize: 14,
-    fontWeight: "700",
   },
   completedTitle: {
     color: "#17202a",

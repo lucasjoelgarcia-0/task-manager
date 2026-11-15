@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { DateTimePicker } from "@expo/ui/community/datetime-picker";
 import { useEffect, useState } from "react";
 import type { ComponentProps } from "react";
 import { AppState, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import {
+  createTaskCalendarEvent,
   isCalendarPermissionGranted,
   requestCalendarPermission,
 } from "../services/device-apis/calendar/calendar";
@@ -36,6 +38,9 @@ type DeviceServicesProps = {
   onImageSelected: (imageUri: string) => void;
   onLocationDetected: (location: LocationDetails) => void;
   onLocationError: (message: string) => void;
+  onCalendarDateSelected: (date: Date) => void;
+  taskDescription: string;
+  taskTitle: string;
 };
 
 type PermissionState = {
@@ -48,6 +53,7 @@ type PermissionState = {
 
 type PermissionKey = keyof PermissionState;
 type NonImagePermissionKey = Exclude<PermissionKey, "camera" | "gallery">;
+type ServiceKey = PermissionKey | "camera" | "gallery";
 
 type DeviceService = {
   icon: IoniconName;
@@ -123,10 +129,17 @@ export function DeviceServices({
   onImageSelected,
   onLocationDetected,
   onLocationError,
+  onCalendarDateSelected,
+  taskDescription,
+  taskTitle,
 }: DeviceServicesProps) {
   const [hasCheckedDevicePermissions, setHasCheckedDevicePermissions] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissionState);
   const [isImageOptionsVisible, setIsImageOptionsVisible] = useState(false);
+  const [isCalendarPickerVisible, setIsCalendarPickerVisible] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [isServiceBusy, setIsServiceBusy] = useState<ServiceKey | null>(null);
+  const [serviceMessage, setServiceMessage] = useState("");
 
   async function refreshDevicePermissions() {
     try {
@@ -177,44 +190,101 @@ export function DeviceServices({
     setIsImageOptionsVisible(false);
   }
 
+  function handleCalendarPickerDismiss() {
+    setIsCalendarPickerVisible(false);
+    setIsServiceBusy(null);
+  }
+
+  async function handleCalendarDateSelected(selectedDate: Date) {
+    setCalendarDate(selectedDate);
+    setIsCalendarPickerVisible(false);
+
+    try {
+      const createdEvent = await createTaskCalendarEvent(taskTitle, taskDescription, selectedDate);
+
+      onCalendarDateSelected(createdEvent.startDate);
+    } catch {
+      setServiceMessage("No se pudo crear el evento en el calendario del dispositivo.");
+    } finally {
+      setIsServiceBusy(null);
+    }
+  }
+
   async function handleCameraPermission() {
     closeImageOptions();
-    const permissionGranted = await requestCameraPermission();
-    await refreshDevicePermissions();
+    setServiceMessage("");
+    setIsServiceBusy("camera");
 
-    if (permissionGranted) {
+    try {
+      const permissionGranted = await requestCameraPermission();
+      await refreshDevicePermissions();
+
+      if (!permissionGranted) {
+        setServiceMessage("No se otorgaron permisos para usar la cámara.");
+        return;
+      }
+
       const imageUri = await takePhoto();
 
       if (imageUri) {
         onImageSelected(imageUri);
+      } else {
+        setServiceMessage("No se tomó ninguna imagen.");
       }
+    } catch {
+      setServiceMessage("No se pudo abrir la cámara.");
+    } finally {
+      setIsServiceBusy(null);
     }
   }
 
   async function handleGalleryPermission() {
     closeImageOptions();
-    const permissionGranted = await requestGalleryPermission();
-    await refreshDevicePermissions();
+    setServiceMessage("");
+    setIsServiceBusy("gallery");
 
-    if (permissionGranted) {
+    try {
+      const permissionGranted = await requestGalleryPermission();
+      await refreshDevicePermissions();
+
+      if (!permissionGranted) {
+        setServiceMessage("No se otorgaron permisos para usar la galería.");
+        return;
+      }
+
       const imageUri = await selectImageFromGallery();
 
       if (imageUri) {
         onImageSelected(imageUri);
+      } else {
+        setServiceMessage("No se seleccionó ninguna imagen.");
       }
+    } catch {
+      setServiceMessage("No se pudo abrir la galería.");
+    } finally {
+      setIsServiceBusy(null);
     }
   }
 
   async function handleServicePermission(permissionKey: NonImagePermissionKey) {
+    setServiceMessage("");
+    setIsServiceBusy(permissionKey);
+
     try {
       const permissionGranted = await permissionRequests[permissionKey]();
       await refreshDevicePermissions();
 
-      if (permissionKey === "location") {
-        if (!permissionGranted) {
-          return;
+      if (!permissionGranted) {
+        if (permissionKey === "location") {
+          onLocationError(locationErrorMessage);
+        } else {
+          setServiceMessage(`No se otorgaron permisos para usar ${permissionLabels[permissionKey]}.`);
         }
 
+        return;
+      }
+
+      if (permissionKey === "location") {
         const location = await getCurrentLocationDetails();
 
         if (location) {
@@ -222,17 +292,28 @@ export function DeviceServices({
         } else {
           onLocationError(locationErrorMessage);
         }
-      } else if (permissionKey === "contacts" && permissionGranted) {
+      } else if (permissionKey === "contacts") {
         const contact = await selectContactDetails();
 
         if (contact) {
           onContactSelected(contact);
+        } else {
+          setServiceMessage("No se seleccionó ningún contacto.");
         }
+      } else if (permissionKey === "calendar") {
+        setCalendarDate(new Date());
+        setIsCalendarPickerVisible(true);
       }
     } catch {
       if (permissionKey === "location") {
         onLocationError(locationErrorMessage);
+      } else if (permissionKey === "calendar") {
+        setServiceMessage("No se pudo crear el evento en el calendario del dispositivo.");
+      } else if (permissionKey === "contacts") {
+        setServiceMessage("No se pudo abrir la selección de contactos.");
       }
+    } finally {
+      setIsServiceBusy(null);
     }
   }
 
@@ -248,6 +329,7 @@ export function DeviceServices({
         <Pressable
           accessibilityLabel="Solicitar imágenes"
           accessibilityRole="button"
+          disabled={isServiceBusy !== null}
           onPress={() => setIsImageOptionsVisible(true)}
           style={({ pressed }) => [
             styles.serviceButton,
@@ -277,6 +359,7 @@ export function DeviceServices({
             <Pressable
               accessibilityLabel={`Solicitar ${service.label.toLowerCase()}`}
               accessibilityRole="button"
+              disabled={isServiceBusy !== null}
               key={service.label}
               onPress={() => handleServicePermission(service.permissionKey)}
               style={({ pressed }) => [
@@ -300,6 +383,23 @@ export function DeviceServices({
       {hasCheckedDevicePermissions && deniedPermissions.length > 0 ? (
         <Text style={styles.error}>{permissionError}</Text>
       ) : null}
+      {serviceMessage ? <Text style={styles.error}>{serviceMessage}</Text> : null}
+
+      {isCalendarPickerVisible ? (
+        <DateTimePicker
+          accentColor="#208AEF"
+          display="default"
+          mode="date"
+          negativeButton={{ label: "Cancelar" }}
+          onDismiss={handleCalendarPickerDismiss}
+          onValueChange={(_event, selectedDate) => {
+            handleCalendarDateSelected(selectedDate);
+          }}
+          positiveButton={{ label: "Elegir" }}
+          presentation="dialog"
+          value={calendarDate}
+        />
+      ) : null}
 
       <Modal
         animationType="fade"
@@ -312,6 +412,7 @@ export function DeviceServices({
             <Text style={styles.modalTitle}>¿De dónde querés obtener la imagen?</Text>
             <Pressable
               accessibilityRole="button"
+              disabled={isServiceBusy !== null}
               onPress={handleCameraPermission}
               style={styles.modalOption}
             >
@@ -320,6 +421,7 @@ export function DeviceServices({
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              disabled={isServiceBusy !== null}
               onPress={handleGalleryPermission}
               style={styles.modalOption}
             >

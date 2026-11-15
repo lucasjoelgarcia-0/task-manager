@@ -14,6 +14,7 @@ export async function getTasks(): Promise<Task[]> {
 
   return tasks.map((task) => ({
     ...task,
+    completionDate: task.completionDate ? new Date(task.completionDate) : task.completionDate,
     notificationDate: new Date(task.notificationDate),
   }));
 }

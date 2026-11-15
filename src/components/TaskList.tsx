@@ -58,6 +58,11 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
             <Text style={[styles.taskText, task.isDone && styles.completedTaskText]}>
               {task.todo}
             </Text>
+            {task.completionDate ? (
+              <Text style={styles.completionDateText}>
+                Fecha de finalización: {task.completionDate.toLocaleDateString("es-AR")}
+              </Text>
+            ) : null}
             {task.responsibleContact ? (
               <Text style={styles.responsibleText}>
                 Responsable: {[task.responsibleContact.firstName, task.responsibleContact.lastName]
@@ -132,6 +137,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   responsibleText: {
+    color: "#566171",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  completionDateText: {
     color: "#566171",
     fontSize: 13,
     marginTop: 4,

@@ -131,3 +131,5 @@ Para desarrollar este proyecto se utilizó Codex con el modelo 5.6 Luna, mediant
 13. **Tests de permisos:** se crearon pruebas de `DeviceServices` que simulan todos los permisos rechazados, permisos parciales y todos los permisos aceptados, verificando cuándo debe aparecer o desaparecer el cartel de error.
 
 14. **Migración del estado de tareas a Zustand:** se solicitó trasladar el estado principal de las tareas a Zustand para facilitar la escalabilidad futura. La solución debía mantener `AsyncStorage` como mecanismo de persistencia, centralizar las operaciones de carga y modificación en `src/stores/taskStore.ts`, adaptar las pantallas `home` y `alta` para compartir el mismo estado, y actualizar `TaskList` para que las modificaciones realizadas desde sus acciones también se reflejaran en el store.
+
+15. **Asociación de la ubicación a la tarea:** se solicitó incluir la ubicación obtenida mediante `expo-location` dentro del objeto persistido de cada tarea y mostrarla en las listas compartidas de `home` y `alta`, junto con la fecha de finalización y el responsable.

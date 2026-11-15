@@ -61,6 +61,7 @@ export default function AltaScreen() {
         todo: todo.trim(),
         completionDate,
         imageUri,
+        location,
         responsibleContact,
         isDone: false,
         withNotification: false,
@@ -73,6 +74,8 @@ export default function AltaScreen() {
     setTitle("");
     setTodo("");
     setImageUri(null);
+    setLocation(null);
+    setLocationError("");
     setResponsibleContact(null);
     setCompletionDate(null);
     setErrorMessage("");

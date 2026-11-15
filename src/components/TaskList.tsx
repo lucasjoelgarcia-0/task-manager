@@ -68,6 +68,13 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
                 Fecha de finalización: {task.completionDate.toLocaleDateString("es-AR")}
               </Text>
             ) : null}
+            {task.location ? (
+              <Text style={styles.locationText}>
+                Ubicación: {[task.location.country, task.location.province]
+                  .filter(Boolean)
+                  .join(", ")}
+              </Text>
+            ) : null}
             {task.responsibleContact ? (
               <Text style={styles.responsibleText}>
                 Responsable: {[task.responsibleContact.firstName, task.responsibleContact.lastName]
@@ -147,6 +154,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   completionDateText: {
+    color: "#566171",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  locationText: {
     color: "#566171",
     fontSize: 13,
     marginTop: 4,

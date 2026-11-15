@@ -58,6 +58,13 @@ export function TaskList({ tasks, onDelete, onToggle }: TaskListProps) {
             <Text style={[styles.taskText, task.isDone && styles.completedTaskText]}>
               {task.todo}
             </Text>
+            {task.responsibleContact ? (
+              <Text style={styles.responsibleText}>
+                Responsable: {[task.responsibleContact.firstName, task.responsibleContact.lastName]
+                  .filter(Boolean)
+                  .join(" ")}
+              </Text>
+            ) : null}
           </View>
           <Pressable onPress={() => setSelectedTask(task)} style={styles.actionButton}>
             <Ionicons color="#208AEF" name="notifications-outline" size={22} />
@@ -123,6 +130,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 4,
+  },
+  responsibleText: {
+    color: "#566171",
+    fontSize: 13,
+    marginTop: 4,
   },
   completedTaskText: {
     textDecorationLine: "line-through",

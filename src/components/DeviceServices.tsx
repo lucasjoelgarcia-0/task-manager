@@ -9,6 +9,7 @@ import {
 import {
   isContactsPermissionGranted,
   requestContactsPermission,
+  selectContactDetails,
 } from "../services/device-apis/contacts/contacts";
 import {
   isCameraPermissionGranted,
@@ -26,10 +27,12 @@ import {
   requestLocationPermission,
   type LocationDetails,
 } from "../services/device-apis/location/location";
+import type { ContactDetails } from "../types/contact";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 type DeviceServicesProps = {
+  onContactSelected: (contact: ContactDetails) => void;
   onImageSelected: (imageUri: string) => void;
   onLocationDetected: (location: LocationDetails) => void;
   onLocationError: (message: string) => void;
@@ -116,6 +119,7 @@ async function checkDevicePermissions(): Promise<PermissionState> {
 }
 
 export function DeviceServices({
+  onContactSelected,
   onImageSelected,
   onLocationDetected,
   onLocationError,
@@ -217,6 +221,12 @@ export function DeviceServices({
           onLocationDetected(location);
         } else {
           onLocationError(locationErrorMessage);
+        }
+      } else if (permissionKey === "contacts" && permissionGranted) {
+        const contact = await selectContactDetails();
+
+        if (contact) {
+          onContactSelected(contact);
         }
       }
     } catch {

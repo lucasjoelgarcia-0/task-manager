@@ -5,6 +5,7 @@ import { ImageThumbnail } from "../components/ImageThumbnail";
 import { DeviceServices } from "../components/DeviceServices";
 import { TaskList } from "../components/TaskList";
 import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
+import type { ContactDetails } from "../types/contact";
 import type { LocationDetails } from "../services/device-apis/location/location";
 import { Task } from "../types/task";
 import { hasCompletedTasks } from "../utils/taskUtils";
@@ -28,6 +29,7 @@ export default function AltaScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [location, setLocation] = useState<LocationDetails | null>(null);
   const [locationError, setLocationError] = useState("");
+  const [responsibleContact, setResponsibleContact] = useState<ContactDetails | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskExample] = useState(getRandomTaskExample);
 
@@ -47,6 +49,7 @@ export default function AltaScreen() {
       title: title.trim(),
       todo: todo.trim(),
       imageUri,
+      responsibleContact,
       isDone: false,
       withNotification: false,
       notificationDate: new Date(),
@@ -56,6 +59,7 @@ export default function AltaScreen() {
     setTitle("");
     setTodo("");
     setImageUri(null);
+    setResponsibleContact(null);
     setErrorMessage("");
   }
 
@@ -101,7 +105,19 @@ export default function AltaScreen() {
         </View>
       ) : null}
       {locationError ? <Text style={styles.locationError}>{locationError}</Text> : null}
+      {responsibleContact ? (
+        <View style={styles.contactCard}>
+          <Text style={styles.contactTitle}>Responsable de la tarea</Text>
+          <Text style={styles.contactName}>
+            {[responsibleContact.firstName, responsibleContact.lastName].filter(Boolean).join(" ")}
+          </Text>
+          {responsibleContact.email ? (
+            <Text style={styles.contactEmail}>{responsibleContact.email}</Text>
+          ) : null}
+        </View>
+      ) : null}
       <DeviceServices
+        onContactSelected={setResponsibleContact}
         onImageSelected={setImageUri}
         onLocationDetected={(detectedLocation) => {
           setLocation(detectedLocation);
@@ -215,6 +231,30 @@ const styles = StyleSheet.create({
     color: "#c0392b",
     fontSize: 13,
     marginTop: 8,
+  },
+  contactCard: {
+    backgroundColor: "#ffffff",
+    borderColor: "#d9dee5",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 12,
+    padding: 12,
+  },
+  contactEmail: {
+    color: "#566171",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  contactName: {
+    color: "#17202a",
+    fontSize: 15,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  contactTitle: {
+    color: "#273142",
+    fontSize: 14,
+    fontWeight: "700",
   },
   locationTitle: {
     color: "#273142",

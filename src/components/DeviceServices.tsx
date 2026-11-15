@@ -3,6 +3,14 @@ import { useEffect, useState } from "react";
 import type { ComponentProps } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import {
+  isCalendarPermissionGranted,
+  requestCalendarPermission,
+} from "../services/device-apis/calendar/calendar";
+import {
+  isContactsPermissionGranted,
+  requestContactsPermission,
+} from "../services/device-apis/contacts/contacts";
+import {
   isCameraPermissionGranted,
   requestCameraPermission,
 } from "../services/device-apis/images/camera";
@@ -10,63 +18,114 @@ import {
   isGalleryPermissionGranted,
   requestGalleryPermission,
 } from "../services/device-apis/images/gallery";
+import {
+  isLocationPermissionGranted,
+  requestLocationPermission,
+} from "../services/device-apis/location/location";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+type PermissionState = {
+  calendar: boolean;
+  camera: boolean;
+  contacts: boolean;
+  gallery: boolean;
+  location: boolean;
+};
+
+type PermissionKey = keyof PermissionState;
+type NonImagePermissionKey = Exclude<PermissionKey, "camera" | "gallery">;
 
 type DeviceService = {
   icon: IoniconName;
   label: string;
+  permissionKey: NonImagePermissionKey;
 };
 
 const deviceServices: DeviceService[] = [
-  { icon: "location-outline", label: "Ubicación" },
-  { icon: "person-outline", label: "Contactos" },
-  { icon: "calendar-outline", label: "Calendario" },
+  { icon: "location-outline", label: "Ubicación", permissionKey: "location" },
+  { icon: "person-outline", label: "Contactos", permissionKey: "contacts" },
+  { icon: "calendar-outline", label: "Calendario", permissionKey: "calendar" },
 ];
 
-const imagePermissionError = "Permisos no otorgados para usar esta funcionalidad.";
+const initialPermissionState: PermissionState = {
+  calendar: false,
+  camera: false,
+  contacts: false,
+  gallery: false,
+  location: false,
+};
 
-async function checkImagePermissions(): Promise<boolean> {
-  const [hasCameraPermission, hasGalleryPermission] = await Promise.all([
+const permissionLabels: Record<PermissionKey, string> = {
+  calendar: "calendario",
+  camera: "cámara",
+  contacts: "contactos",
+  gallery: "galería",
+  location: "ubicación",
+};
+
+const permissionRequests: Record<NonImagePermissionKey, () => Promise<boolean>> = {
+  calendar: requestCalendarPermission,
+  contacts: requestContactsPermission,
+  location: requestLocationPermission,
+};
+
+async function checkDevicePermissions(): Promise<PermissionState> {
+  const [
+    hasCameraPermission,
+    hasGalleryPermission,
+    hasLocationPermission,
+    hasContactsPermission,
+    hasCalendarPermission,
+  ] = await Promise.all([
     isCameraPermissionGranted(),
     isGalleryPermissionGranted(),
+    isLocationPermissionGranted(),
+    isContactsPermissionGranted(),
+    isCalendarPermissionGranted(),
   ]);
 
-  return hasCameraPermission && hasGalleryPermission;
+  return {
+    calendar: hasCalendarPermission,
+    camera: hasCameraPermission,
+    contacts: hasContactsPermission,
+    gallery: hasGalleryPermission,
+    location: hasLocationPermission,
+  };
 }
 
 export function DeviceServices() {
-  const [hasCheckedImagePermissions, setHasCheckedImagePermissions] = useState(false);
-  const [hasImagePermissions, setHasImagePermissions] = useState(false);
+  const [hasCheckedDevicePermissions, setHasCheckedDevicePermissions] = useState(false);
+  const [permissions, setPermissions] = useState(initialPermissionState);
   const [isImageOptionsVisible, setIsImageOptionsVisible] = useState(false);
 
-  async function refreshImagePermissions() {
+  async function refreshDevicePermissions() {
     try {
-      setHasImagePermissions(await checkImagePermissions());
+      setPermissions(await checkDevicePermissions());
     } catch {
-      setHasImagePermissions(false);
+      setPermissions(initialPermissionState);
     } finally {
-      setHasCheckedImagePermissions(true);
+      setHasCheckedDevicePermissions(true);
     }
   }
 
   useEffect(() => {
     let isMounted = true;
 
-    void checkImagePermissions()
-      .then((permissionsGranted) => {
+    void checkDevicePermissions()
+      .then((nextPermissions) => {
         if (isMounted) {
-          setHasImagePermissions(permissionsGranted);
+          setPermissions(nextPermissions);
         }
       })
       .catch(() => {
         if (isMounted) {
-          setHasImagePermissions(false);
+          setPermissions(initialPermissionState);
         }
       })
       .finally(() => {
         if (isMounted) {
-          setHasCheckedImagePermissions(true);
+          setHasCheckedDevicePermissions(true);
         }
       });
 
@@ -82,14 +141,24 @@ export function DeviceServices() {
   async function handleCameraPermission() {
     closeImageOptions();
     await requestCameraPermission();
-    await refreshImagePermissions();
+    await refreshDevicePermissions();
   }
 
   async function handleGalleryPermission() {
     closeImageOptions();
     await requestGalleryPermission();
-    await refreshImagePermissions();
+    await refreshDevicePermissions();
   }
+
+  async function handleServicePermission(permissionKey: NonImagePermissionKey) {
+    await permissionRequests[permissionKey]();
+    await refreshDevicePermissions();
+  }
+
+  const deniedPermissions = (Object.keys(permissionLabels) as PermissionKey[])
+    .filter((permissionKey) => !permissions[permissionKey])
+    .map((permissionKey) => permissionLabels[permissionKey]);
+  const permissionError = `Los siguientes permisos no fueron otorgados. Algunas funcionalidades de la aplicación podrían no estar disponibles: ${deniedPermissions.join(", ")}.`;
 
   return (
     <View style={styles.container}>
@@ -101,35 +170,54 @@ export function DeviceServices() {
           onPress={() => setIsImageOptionsVisible(true)}
           style={({ pressed }) => [
             styles.serviceButton,
-            !hasImagePermissions && styles.serviceButtonError,
+            (!permissions.camera || !permissions.gallery) && styles.serviceButtonError,
             pressed && styles.pressedButton,
           ]}
         >
           <Ionicons
-            color={hasImagePermissions ? "#208AEF" : "#ffffff"}
+            color={permissions.camera && permissions.gallery ? "#208AEF" : "#ffffff"}
             name="images-outline"
             size={28}
           />
-          <Text style={[styles.serviceLabel, !hasImagePermissions && styles.serviceLabelError]}>
+          <Text
+            style={[
+              styles.serviceLabel,
+              (!permissions.camera || !permissions.gallery) && styles.serviceLabelError,
+            ]}
+          >
             Imágenes
           </Text>
         </Pressable>
 
-        {deviceServices.map((service) => (
-          <Pressable
-            accessibilityLabel={`Solicitar ${service.label.toLowerCase()}`}
-            accessibilityRole="button"
-            key={service.label}
-            onPress={() => undefined}
-            style={({ pressed }) => [styles.serviceButton, pressed && styles.pressedButton]}
-          >
-            <Ionicons color="#208AEF" name={service.icon} size={28} />
-            <Text style={styles.serviceLabel}>{service.label}</Text>
-          </Pressable>
-        ))}
+        {deviceServices.map((service) => {
+          const hasPermission = permissions[service.permissionKey];
+
+          return (
+            <Pressable
+              accessibilityLabel={`Solicitar ${service.label.toLowerCase()}`}
+              accessibilityRole="button"
+              key={service.label}
+              onPress={() => void handleServicePermission(service.permissionKey)}
+              style={({ pressed }) => [
+                styles.serviceButton,
+                !hasPermission && styles.serviceButtonError,
+                pressed && styles.pressedButton,
+              ]}
+            >
+              <Ionicons
+                color={hasPermission ? "#208AEF" : "#ffffff"}
+                name={service.icon}
+                size={28}
+              />
+              <Text style={[styles.serviceLabel, !hasPermission && styles.serviceLabelError]}>
+                {service.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
-      {hasCheckedImagePermissions && !hasImagePermissions ? (
-        <Text style={styles.error}>{imagePermissionError}</Text>
+      {hasCheckedDevicePermissions && deniedPermissions.length > 0 ? (
+        <Text style={styles.error}>{permissionError}</Text>
       ) : null}
 
       <Modal

@@ -85,10 +85,18 @@ El componente `DeviceServices` agrupa estos accesos y administra los permisos a 
 
 Los permisos se actualizan al volver a la aplicación y se validan de forma independiente para cámara, galería, ubicación, contactos y calendario.
 
-También se incorporaron tests para verificar el cartel de permisos en tres escenarios: todos rechazados, permisos parciales y todos aceptados. En el caso parcial solo aparecen los permisos que faltan.
+También se incorporaron tests para verificar el cartel de permisos en tres escenarios: todos rechazados, permisos parciales y todos aceptados. En el caso parcial solo aparecen los permisos que faltan. Además, se incluyen pruebas para la integración de Zustand como store principal de tareas.
+
+### Ejecutar los tests de la segunda parte
+
+Para ejecutar únicamente los tests nuevos de permisos y del store de tareas:
+
+```bash
+npm test -- --runInBand src/components/__tests__/DeviceServices.test.tsx src/stores/__tests__/taskStore.test.ts
+```
 
 **Imagen de los tests:**
-![img_1.png](img_1.png)
+![img_2.png](img_2.png)
 
 ## Uso de la IA en este proyecto
 

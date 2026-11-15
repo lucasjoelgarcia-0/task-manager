@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
-import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
+import { DeviceServices } from "../components/DeviceServices";
 import { TaskList } from "../components/TaskList";
+import { deleteTask, saveTask, toggleTask } from "../services/taskStorage";
 import { Task } from "../types/task";
 import { hasCompletedTasks } from "../utils/taskUtils";
 
@@ -83,6 +84,7 @@ export default function AltaScreen() {
         style={styles.input}
         value={todo}
       />
+      <DeviceServices />
       <Pressable onPress={handleSave} style={styles.addButton}>
         <Text style={styles.addText}>Crear</Text>
       </Pressable>
